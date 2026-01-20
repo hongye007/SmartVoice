@@ -1,0 +1,14 @@
+{
+  "preferences": {
+    "language": "zh-CN",
+
+    "documentation": {
+      "outputPath": "docs"
+    }
+  },
+
+  "metadata": {
+    "createdAt": "2026-01-20",
+    "version": "1.0.0"
+  }
+}
