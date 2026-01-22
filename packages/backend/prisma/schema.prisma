@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String
+  password  String   // bcrypt hashed
+  quota     Int      @default(30000) // 免费额度 3万字
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects Project[]
+
+  @@map("users")
+}
+
+// 项目表
+model Project {
+  id          String        @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  status      ProjectStatus @default(PENDING)
+  fileUrl     String        // MinIO URL
+  totalWords  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapters   Chapter[]
+  characters Character[]
+  audios     Audio[]
+  tasks      Task[]
+
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  PENDING    // 待解析
+  PARSING    // 解析中
+  READY      // 就绪(可生成)
+  GENERATING // 生成中
+  COMPLETED  // 已完成
+  FAILED     // 失败
+}
+
+// 章节表
+model Chapter {
+  id        String        @id @default(uuid())
+  projectId String
+  title     String
+  content   String        @db.Text
+  order     Int           // 章节顺序
+  wordCount Int           @default(0)
+  status    ChapterStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  audios  Audio[]
+
+  @@map("chapters")
+}
+
+enum ChapterStatus {
+  PENDING    // 待处理
+  PROCESSING // 处理中
+  COMPLETED  // 已完成
+  FAILED     // 失败
+}
+
+// 角色表
+model Character {
+  id            String   @id @default(uuid())
+  projectId     String
+  name          String
+  gender        Gender   @default(UNKNOWN)
+  voiceId       String? // 选择的音色 ID
+  voiceConfig   Json?    // 音色配置(speed, pitch, emotion)
+  dialogueCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("characters")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+// 音频表
+model Audio {
+  id        String      @id @default(uuid())
+  projectId String
+  chapterId String
+  url       String      // MinIO URL
+  duration  Int         @default(0) // 秒
+  fileSize  Int         @default(0) // 字节
+  status    AudioStatus @default(PENDING)
+  errorMsg  String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@map("audios")
+}
+
+enum AudioStatus {
+  PENDING    // 待生成
+  PROCESSING // 生成中
+  COMPLETED  // 已完成
+  FAILED     // 失败
+}
+
+// 任务队列表 (用于追踪异步任务)
+model Task {
+  id        String     @id @default(uuid())
+  projectId String
+  type      TaskType
+  status    TaskStatus @default(PENDING)
+  progress  Int        @default(0) // 0-100
+  result    Json? // 任务结果
+  errorMsg  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}
+
+enum TaskType {
+  PARSE_TEXT        // 文本解析
+  RECOGNIZE_CHARACTERS // 角色识别
+  GENERATE_AUDIO    // 音频生成
+}
+
+enum TaskStatus {
+  PENDING    // 待处理
+  PROCESSING // 处理中
+  COMPLETED  // 已完成
+  FAILED     // 失败
+}

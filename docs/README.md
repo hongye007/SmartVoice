@@ -56,57 +56,71 @@ docs/
 
 ---
 
-## 🔧 阶段 2: 技术设计（进行中 🚧）
+## 🔧 阶段 2: 技术设计（已完成 ✅）
 
 **目录:** `02-technical-design/SmartVoice/`
 
-**将包含文档:**
-- **技术总体设计** (overall-design.md)
+**包含文档:**
+- **技术总体设计** ([overall-design.md](02-technical-design/SmartVoice/overall-design.md))
   - 核心业务流程梳理
   - 技术实现映射
   - 关键技术挑战
   - 技术边界和约束
   - 技术分层策略
 
-- **技术栈选型** (tech-stack.md)
+- **技术栈选型** ([tech-stack.md](02-technical-design/SmartVoice/tech-stack.md)) ⭐
   - 前端/后端/数据库选型对比
   - 推荐方案和理由
+  - 自部署优先策略（成本节省 67%）
 
-- **第三方服务评估** (third-party-services.md)
+- **第三方服务评估** ([third-party-services.md](02-technical-design/SmartVoice/third-party-services.md))
   - TTS、NLP、云服务评估
-  - 成本估算
+  - 成本估算和 Adapter Pattern
 
-- **系统架构设计** (system-architecture.md)
+- **系统架构设计** ([system-architecture.md](02-technical-design/SmartVoice/system-architecture.md)) ⭐
   - 整体架构图
   - 模块划分
   - 数据流设计
 
-- **API 设计** (api-design.md)
+- **API 设计** ([api-design.md](02-technical-design/SmartVoice/api-design.md)) ⭐
   - RESTful API 接口定义
   - 请求/响应规范
 
-- **数据库设计** (database-design.md)
-  - 数据模型
-  - 表结构设计
+- **技术设计文档** ([technical-design.md](02-technical-design/SmartVoice/technical-design.md))
+  - 技术方案综合文档
 
-- **技术实施路线图** (tech-roadmap.md)
-  - 技术里程碑
-  - 开发规范
-  - 风险识别
+- **技术实施路线图** ([implementation-roadmap.md](02-technical-design/SmartVoice/implementation-roadmap.md)) ⭐
+  - 技术里程碑（MVP 12周，360人时）
+  - 开发规范和团队分工
+  - 风险识别和应对策略
 
-**预期成果:**
-- [ ] 技术架构方案确定
-- [ ] 技术选型完成
-- [ ] 开发规范制定
-- [ ] 技术风险识别和应对
+**阶段成果:**
+- ✅ 技术架构方案确定
+- ✅ 技术选型完成（React + Node.js + PostgreSQL + MinIO + Coqui TTS）
+- ✅ 开发规范制定（ESLint + Prettier + Husky）
+- ✅ 技术风险识别和应对
 
 ---
 
-## 🚀 阶段 3: 实施阶段（未来 📅）
+## 🚀 阶段 3: 实施阶段（进行中 🚧）
 
-**目录:** `03-implementation/SmartVoice/`
+**目录:** `03-implementation/SmartVoice/` (规划中)
 
-**将包含文档:**
+**当前进度:** 基础设施搭建（第 1-2 周）
+
+**已完成:**
+- ✅ 项目初始化和 Monorepo 结构
+- ✅ pnpm workspace 配置
+- ✅ ESLint + Prettier + Husky 配置
+- ✅ Git 规范和代码规范
+
+**进行中:**
+- 🚧 前端脚手架搭建（React + Vite + TypeScript）
+- 🚧 后端脚手架搭建（Node.js + Express + TypeScript）
+- 🚧 数据库设计（Prisma Schema）
+- 🚧 Docker 环境搭建
+
+**未来将包含:**
 - **development/** - 开发文档
   - 代码规范
   - 开发环境搭建
@@ -139,13 +153,16 @@ docs/
 - 产品简介 → 用户画像 → 市场分析 → 功能规格 → 产品路线图
 
 **开发工程师:**
-- 产品简介 → 功能规格 → 技术设计（全部）→ 实施文档
+- [CLAUDE.md](CLAUDE.md) (项目快速上手) → 产品简介 → 功能规格 → 技术设计（全部）→ 实施
 
 **设计师:**
 - 产品简介 → 用户画像 → 功能规格
 
 **测试工程师:**
 - 功能规格 → 技术设计 → 测试文档
+
+**AI 协作 (Claude Code):**
+- [CLAUDE.md](CLAUDE.md) - 为 Claude AI 提供项目上下文和当前状态
 
 ---
 
@@ -188,5 +205,5 @@ docs/
 ---
 
 **文档维护:** SmartVoice 团队
-**最后更新:** 2026-01-21
-**文档版本:** 1.0
+**最后更新:** 2026-01-22
+**文档版本:** 2.0

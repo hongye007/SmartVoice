@@ -1,0 +1,6 @@
+# Prisma generated files
+*.db
+*.db-journal
+
+# Migration SQL files (keep migrations directory structure)
+# migrations/*_migration.sql
