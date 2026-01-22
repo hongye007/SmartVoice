@@ -1,8 +1,12 @@
 import { Router } from 'express'
 import { projectController } from '../controllers/project.controller.js'
+import { parserController } from '../controllers/parser.controller.js'
+import { chapterController } from '../controllers/chapter.controller.js'
+import { characterController } from '../controllers/character.controller.js'
 import { authenticate } from '../middlewares/auth.js'
 import { upload } from '../middlewares/upload.js'
 import { validate, schemas } from '../middlewares/validate.js'
+import { asyncHandler } from '../middlewares/errorHandler.js'
 
 const router = Router()
 
@@ -27,5 +31,29 @@ router.patch('/:id', validate(schemas.createProject), (req, res, next) =>
 
 // DELETE /api/projects/:id - 删除项目
 router.delete('/:id', (req, res, next) => projectController.deleteProject(req, res, next))
+
+// POST /api/projects/:projectId/parse - 解析项目文本
+router.post(
+  '/:projectId/parse',
+  asyncHandler(parserController.parseProject.bind(parserController))
+)
+
+// POST /api/projects/:projectId/reparse - 重新解析项目
+router.post(
+  '/:projectId/reparse',
+  asyncHandler(parserController.reParseProject.bind(parserController))
+)
+
+// GET /api/projects/:projectId/chapters - 获取项目章节列表
+router.get(
+  '/:projectId/chapters',
+  asyncHandler(chapterController.getProjectChapters.bind(chapterController))
+)
+
+// GET /api/projects/:projectId/characters - 获取项目角色列表
+router.get(
+  '/:projectId/characters',
+  asyncHandler(characterController.getProjectCharacters.bind(characterController))
+)
 
 export default router

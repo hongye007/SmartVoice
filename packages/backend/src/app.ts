@@ -7,6 +7,8 @@ import { logger } from './utils/logger.js'
 import { errorHandler } from './middlewares/errorHandler.js'
 import authRoutes from './routes/auth.routes.js'
 import projectRoutes from './routes/project.routes.js'
+import chapterRoutes from './routes/chapter.routes.js'
+import characterRoutes from './routes/character.routes.js'
 
 const app = express()
 
@@ -56,9 +58,8 @@ app.get('/api', (_req, res) => {
 // API routes
 app.use('/api/auth', authRoutes)
 app.use('/api/projects', projectRoutes)
-// TODO: Add more routes here
-// app.use('/api/characters', authenticate, characterRoutes)
-// app.use('/api/audios', authenticate, audioRoutes)
+app.use('/api/chapters', chapterRoutes)
+app.use('/api/characters', characterRoutes)
 
 // 404 handler
 app.use((_req, res) => {
