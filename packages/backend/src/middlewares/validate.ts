@@ -23,36 +23,37 @@ export const validate = (schema: Joi.ObjectSchema) => {
 export const schemas = {
   register: Joi.object({
     email: Joi.string().email().required().messages({
-      'string.email': 'Please provide a valid email',
-      'any.required': 'Email is required',
+      'string.email': '请提供有效的邮箱地址',
+      'any.required': '邮箱不能为空',
     }),
     username: Joi.string().min(2).max(50).required().messages({
-      'string.min': 'Username must be at least 2 characters',
-      'string.max': 'Username must not exceed 50 characters',
-      'any.required': 'Username is required',
+      'string.min': '用户名至少需要2个字符',
+      'string.max': '用户名不能超过50个字符',
+      'any.required': '用户名不能为空',
     }),
     password: Joi.string().min(6).max(100).required().messages({
-      'string.min': 'Password must be at least 6 characters',
-      'string.max': 'Password must not exceed 100 characters',
-      'any.required': 'Password is required',
+      'string.min': '密码至少需要6个字符',
+      'string.max': '密码不能超过100个字符',
+      'any.required': '密码不能为空',
     }),
   }),
 
   login: Joi.object({
-    email: Joi.string().email().required().messages({
-      'string.email': 'Please provide a valid email',
-      'any.required': 'Email is required',
+    email: Joi.string().required().messages({
+      'any.required': '请输入用户名或邮箱',
+      'string.empty': '请输入用户名或邮箱',
     }),
     password: Joi.string().required().messages({
-      'any.required': 'Password is required',
+      'any.required': '密码不能为空',
+      'string.empty': '密码不能为空',
     }),
   }),
 
   createProject: Joi.object({
     name: Joi.string().min(1).max(200).required().messages({
-      'string.min': 'Project name is required',
-      'string.max': 'Project name must not exceed 200 characters',
-      'any.required': 'Project name is required',
+      'string.min': '项目名称不能为空',
+      'string.max': '项目名称不能超过200个字符',
+      'any.required': '项目名称不能为空',
     }),
     description: Joi.string().max(1000).optional().allow(''),
   }),

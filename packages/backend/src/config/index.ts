@@ -38,6 +38,14 @@ export const config = {
     url: process.env.COQUI_TTS_URL || 'http://localhost:5002',
   },
 
+  // Xfyun TTS (讯飞 - 推荐)
+  xfyunTTS: {
+    appId: process.env.XFYUN_TTS_APP_ID || '',
+    apiKey: process.env.XFYUN_TTS_API_KEY || '',
+    apiSecret: process.env.XFYUN_TTS_API_SECRET || '',
+    apiUrl: process.env.XFYUN_TTS_API_URL || 'wss://tts-api.xfyun.cn/v2/tts',
+  },
+
   // Deepseek API
   deepseek: {
     apiKey: process.env.DEEPSEEK_API_KEY || '',

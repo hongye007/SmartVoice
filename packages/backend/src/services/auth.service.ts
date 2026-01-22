@@ -14,7 +14,16 @@ export class AuthService {
     })
 
     if (existingUser) {
-      throw new AppError('Email already exists', 400)
+      throw new AppError('该邮箱已被注册', 400)
+    }
+
+    // 检查用户名是否已存在
+    const existingUsername = await prisma.user.findFirst({
+      where: { username: data.username },
+    })
+
+    if (existingUsername) {
+      throw new AppError('该用户名已被使用', 400)
     }
 
     // 哈希密码
@@ -44,20 +53,25 @@ export class AuthService {
 
   // 用户登录
   async login(data: LoginDTO) {
-    // 查找用户
-    const user = await prisma.user.findUnique({
-      where: { email: data.email },
+    // 查找用户（支持邮箱或用户名登录）
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: data.email },
+          { username: data.email }, // email字段也可能是用户名
+        ],
+      },
     })
 
     if (!user) {
-      throw new AppError('Invalid email or password', 401)
+      throw new AppError('用户不存在或密码错误', 401)
     }
 
     // 验证密码
     const isPasswordValid = await bcrypt.compare(data.password, user.password)
 
     if (!isPasswordValid) {
-      throw new AppError('Invalid email or password', 401)
+      throw new AppError('用户不存在或密码错误', 401)
     }
 
     // 生成 JWT token

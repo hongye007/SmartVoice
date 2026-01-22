@@ -9,6 +9,8 @@ import authRoutes from './routes/auth.routes.js'
 import projectRoutes from './routes/project.routes.js'
 import chapterRoutes from './routes/chapter.routes.js'
 import characterRoutes from './routes/character.routes.js'
+import ttsRoutes from './routes/tts.routes.js'
+import jobRoutes from './routes/job.routes.js'
 
 const app = express()
 
@@ -51,6 +53,7 @@ app.get('/api', (_req, res) => {
       health: 'GET /health',
       auth: 'POST /api/auth/register, POST /api/auth/login',
       projects: 'GET /api/projects, POST /api/projects',
+      tts: 'GET /api/tts/voices, POST /api/tts/chapters/:chapterId/generate',
     },
   })
 })
@@ -60,6 +63,8 @@ app.use('/api/auth', authRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/chapters', chapterRoutes)
 app.use('/api/characters', characterRoutes)
+app.use('/api/tts', ttsRoutes)
+app.use('/api/jobs', jobRoutes)
 
 // 404 handler
 app.use((_req, res) => {
