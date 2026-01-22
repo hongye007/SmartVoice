@@ -30,9 +30,11 @@ import {
   ClockCircleOutlined,
   ExclamationCircleOutlined,
 } from '@ant-design/icons'
+import AudioPlayer from 'react-h5-audio-player'
+import 'react-h5-audio-player/lib/styles.css'
 import { projectService } from '../services/project.service'
 import { socketService } from '../services/socket.service'
-import type { Project, Chapter, Character, JobStatus } from '../types/api'
+import type { Project, Chapter, Character, JobStatus, Audio } from '../types/api'
 
 const { Title, Text } = Typography
 
@@ -48,6 +50,8 @@ export function ProjectDetailPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [generatingChapterId, setGeneratingChapterId] = useState<string | null>(null)
   const [audioJobs, setAudioJobs] = useState<Map<string, JobStatus>>(new Map())
+  const [chapterAudios, setChapterAudios] = useState<Map<string, Audio>>(new Map())
+  const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([])
 
   useEffect(() => {
     if (id) {
@@ -154,8 +158,27 @@ export function ProjectDetailPage() {
     try {
       const data = await projectService.getChapters(id!)
       setChapters(data)
+
+      // 加载已完成章节的音频信息
+      const completedChapters = data.filter(ch => ch.status === 'COMPLETED')
+      for (const chapter of completedChapters) {
+        loadChapterAudio(chapter.id)
+      }
     } catch (error: any) {
       console.error(error)
+    }
+  }
+
+  const loadChapterAudio = async (chapterId: string) => {
+    try {
+      const audio = await projectService.getChapterAudio(chapterId)
+      setChapterAudios((prev) => {
+        const newMap = new Map(prev)
+        newMap.set(chapterId, audio)
+        return newMap
+      })
+    } catch (error: any) {
+      console.error('Failed to load audio for chapter:', chapterId, error)
     }
   }
 
@@ -582,30 +605,90 @@ export function ProjectDetailPage() {
                 {
                   title: '操作',
                   key: 'actions',
-                  width: 150,
+                  width: 200,
                   render: (record: Chapter) => {
                     const job = audioJobs.get(record.id)
                     const isGenerating = job && (job.state === 'active' || job.state === 'waiting')
+                    const audio = chapterAudios.get(record.id)
+                    const hasAudio = record.status === 'COMPLETED' && audio
 
                     return (
-                      <Button
-                        type="primary"
-                        size="small"
-                        icon={<SoundOutlined />}
-                        onClick={() => handleGenerateAudio(record.id)}
-                        loading={generatingChapterId === record.id || isGenerating}
-                        disabled={!!generatingChapterId && generatingChapterId !== record.id}
-                      >
-                        {isGenerating
-                          ? `生成中 ${job?.progress?.percentage ? `${Math.round(job.progress.percentage)}%` : ''}`
-                          : record.status === 'COMPLETED'
-                            ? '重新生成'
-                            : '生成音频'}
-                      </Button>
+                      <Space size="small">
+                        {hasAudio && (
+                          <Button
+                            type="default"
+                            size="small"
+                            icon={<PlayCircleOutlined />}
+                            onClick={() => {
+                              // 切换展开/收起状态
+                              setExpandedRowKeys(prev =>
+                                prev.includes(record.id)
+                                  ? prev.filter(key => key !== record.id)
+                                  : [...prev, record.id]
+                              )
+                            }}
+                          >
+                            {expandedRowKeys.includes(record.id) ? '收起' : '预览'}
+                          </Button>
+                        )}
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<SoundOutlined />}
+                          onClick={() => handleGenerateAudio(record.id)}
+                          loading={generatingChapterId === record.id || isGenerating}
+                          disabled={!!generatingChapterId && generatingChapterId !== record.id}
+                        >
+                          {isGenerating
+                            ? `生成中 ${job?.progress?.percentage ? `${Math.round(job.progress.percentage)}%` : ''}`
+                            : record.status === 'COMPLETED'
+                              ? '重新生成'
+                              : '生成音频'}
+                        </Button>
+                      </Space>
                     )
                   },
                 },
               ]}
+              expandable={{
+                expandedRowKeys: expandedRowKeys,
+                onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
+                expandedRowRender: (record: Chapter) => {
+                  const audio = chapterAudios.get(record.id)
+
+                  // 只有已完成且有音频的章节才显示播放器
+                  if (record.status === 'COMPLETED' && audio) {
+                    return (
+                      <div style={{ padding: '16px 0' }}>
+                        <div style={{ marginBottom: 8 }}>
+                          <Text strong>
+                            <PlayCircleOutlined /> 音频预览
+                          </Text>
+                          <Text type="secondary" style={{ marginLeft: 16 }}>
+                            时长: {Math.floor(audio.duration / 60)}:{(audio.duration % 60).toString().padStart(2, '0')} |
+                            大小: {(audio.fileSize / 1024 / 1024).toFixed(2)} MB
+                          </Text>
+                        </div>
+                        <AudioPlayer
+                          src={audio.url}
+                          autoPlay={false}
+                          showJumpControls={true}
+                          customAdditionalControls={[]}
+                          customVolumeControls={[]}
+                          layout="horizontal-reverse"
+                          style={{ borderRadius: 4 }}
+                        />
+                      </div>
+                    )
+                  }
+                  return null
+                },
+                rowExpandable: (record) => {
+                  const audio = chapterAudios.get(record.id)
+                  return record.status === 'COMPLETED' && !!audio
+                },
+                showExpandColumn: false, // 隐藏默认展开列
+              }}
             />
           </Card>
         )}
