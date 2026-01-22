@@ -31,6 +31,7 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons'
 import { projectService } from '../services/project.service'
+import { socketService } from '../services/socket.service'
 import type { Project, Chapter, Character, JobStatus } from '../types/api'
 
 const { Title, Text } = Typography
@@ -46,10 +47,76 @@ export function ProjectDetailPage() {
   const [parseJob, setParseJob] = useState<JobStatus | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [generatingChapterId, setGeneratingChapterId] = useState<string | null>(null)
+  const [audioJobs, setAudioJobs] = useState<Map<string, JobStatus>>(new Map())
 
   useEffect(() => {
     if (id) {
       loadAllData()
+
+      // 连接 WebSocket
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      const token = localStorage.getItem('token') || ''
+
+      if (user.id && token) {
+        socketService.connect(user.id, token)
+        socketService.subscribeToProject(id)
+
+        // 监听音频生成进度
+        const unsubscribeProgress = socketService.onAudioProgress((data) => {
+          if (data.projectId === id) {
+            setAudioJobs((prev) => {
+              const newMap = new Map(prev)
+              newMap.set(data.chapterId, {
+                jobId: data.jobId,
+                queueName: 'audio-generation',
+                state: 'active',
+                progress: data.progress,
+                failedReason: undefined,
+                attemptsMade: 0,
+                data: {},
+                createdAt: data.timestamp,
+              })
+              return newMap
+            })
+          }
+        })
+
+        // 监听音频生成完成
+        const unsubscribeComplete = socketService.onAudioComplete((data) => {
+          if (data.projectId === id) {
+            setAudioJobs((prev) => {
+              const newMap = new Map(prev)
+              newMap.delete(data.chapterId)
+              return newMap
+            })
+            setGeneratingChapterId(null)
+            message.success('音频生成完成！')
+            loadProject()  // 刷新项目状态
+            loadChapters() // 刷新章节列表
+          }
+        })
+
+        // 监听音频生成失败
+        const unsubscribeFailed = socketService.onAudioFailed((data) => {
+          if (data.projectId === id) {
+            setAudioJobs((prev) => {
+              const newMap = new Map(prev)
+              newMap.delete(data.chapterId)
+              return newMap
+            })
+            setGeneratingChapterId(null)
+            message.error('音频生成失败：' + data.error)
+          }
+        })
+
+        // 清理函数
+        return () => {
+          unsubscribeProgress()
+          unsubscribeComplete()
+          unsubscribeFailed()
+          socketService.unsubscribeFromProject(id)
+        }
+      }
     }
   }, [id])
 
@@ -140,12 +207,27 @@ export function ProjectDetailPage() {
     setGeneratingChapterId(chapterId)
     try {
       const { jobId } = await projectService.generateChapterAudio(chapterId)
-      message.success('音频生成任务已开始，请稍后查看')
+      message.success('音频生成任务已开始，实时进度将通过 WebSocket 推送')
 
-      setTimeout(() => {
-        message.info('音频生成中，请稍后刷新查看状态')
-        setGeneratingChapterId(null)
-      }, 2000)
+      // WebSocket 会实时推送进度更新，无需轮询
+      // 初始化任务状态
+      setAudioJobs((prev) => {
+        const newMap = new Map(prev)
+        newMap.set(chapterId, {
+          jobId,
+          queueName: 'audio-generation',
+          state: 'waiting',
+          progress: {
+            percentage: 0,
+            message: '等待处理',
+          },
+          failedReason: undefined,
+          attemptsMade: 0,
+          data: {},
+          createdAt: new Date().toISOString(),
+        })
+        return newMap
+      })
     } catch (error: any) {
       message.error(error.message || '生成任务启动失败')
       setGeneratingChapterId(null)
@@ -317,6 +399,69 @@ export function ProjectDetailPage() {
             </div>
           )}
 
+          {/* 音频生成进度提示 */}
+          {audioJobs.size > 0 && (
+            <Alert
+              message="音频生成中"
+              description={
+                <div>
+                  <div style={{ marginBottom: 8 }}>
+                    <Text>正在生成 {audioJobs.size} 个章节的音频...</Text>
+                  </div>
+                  {Array.from(audioJobs.entries()).map(([chapterId, job]) => {
+                    const chapter = chapters.find(c => c.id === chapterId)
+                    if (!chapter || job.state !== 'active') return null
+
+                    // 估算剩余时间：基于 Coqui TTS CPU 模式约 5 字符/秒的速度
+                    const progress = job.progress?.percentage || 0
+                    const remainingChars = chapter.wordCount * (100 - progress) / 100
+                    const estimatedSeconds = Math.ceil(remainingChars / 5)
+
+                    return (
+                      <div key={chapterId} style={{ marginBottom: 12 }}>
+                        <div style={{ marginBottom: 4 }}>
+                          <Text strong>{chapter.title}</Text>
+                          <Text type="secondary" style={{ marginLeft: 8 }}>
+                            ({chapter.wordCount} 字)
+                          </Text>
+                        </div>
+                        <Progress
+                          percent={job.progress?.percentage || 0}
+                          size="small"
+                          status="active"
+                          strokeColor={{
+                            '0%': '#108ee9',
+                            '100%': '#87d068',
+                          }}
+                        />
+                        {job.progress?.message && (
+                          <div style={{ marginTop: 4 }}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {job.progress.message}
+                            </Text>
+                          </div>
+                        )}
+                        {progress > 0 && progress < 100 && (
+                          <div style={{ marginTop: 4 }}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              预计剩余时间: {estimatedSeconds > 60
+                                ? `${Math.ceil(estimatedSeconds / 60)} 分钟`
+                                : `${estimatedSeconds} 秒`}
+                            </Text>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              }
+              type="info"
+              showIcon
+              icon={<SoundOutlined spin />}
+              style={{ marginTop: 24 }}
+            />
+          )}
+
           {/* 解析失败 */}
           {project.status === 'FAILED' && (
             <Alert
@@ -385,11 +530,47 @@ export function ProjectDetailPage() {
                   title: '状态',
                   dataIndex: 'status',
                   key: 'status',
-                  width: 120,
-                  render: (status: string) => {
+                  width: 200,
+                  render: (status: string, record: Chapter) => {
+                    const job = audioJobs.get(record.id)
+
+                    // 显示生成进度
+                    if (job && (job.state === 'active' || job.state === 'waiting')) {
+                      return (
+                        <div>
+                          <div style={{ marginBottom: 4 }}>
+                            <Tag icon={<ClockCircleOutlined />} color="processing">
+                              生成中...
+                            </Tag>
+                          </div>
+                          {job.progress && (
+                            <Progress
+                              percent={job.progress.percentage || 0}
+                              size="small"
+                              status="active"
+                              strokeColor={{
+                                '0%': '#108ee9',
+                                '100%': '#87d068',
+                              }}
+                            />
+                          )}
+                          {job.progress?.message && (
+                            <div style={{ marginTop: 4 }}>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {job.progress.message}
+                              </Text>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
+
+                    // 显示完成状态
                     if (status === 'COMPLETED') {
                       return <Tag icon={<CheckCircleOutlined />} color="success">已生成</Tag>
                     }
+
+                    // 待生成状态
                     return <Tag icon={<ClockCircleOutlined />} color="default">待生成</Tag>
                   },
                   filters: [
@@ -402,18 +583,27 @@ export function ProjectDetailPage() {
                   title: '操作',
                   key: 'actions',
                   width: 150,
-                  render: (record: Chapter) => (
-                    <Button
-                      type="primary"
-                      size="small"
-                      icon={<SoundOutlined />}
-                      onClick={() => handleGenerateAudio(record.id)}
-                      loading={generatingChapterId === record.id}
-                      disabled={!!generatingChapterId && generatingChapterId !== record.id}
-                    >
-                      {record.status === 'COMPLETED' ? '重新生成' : '生成音频'}
-                    </Button>
-                  ),
+                  render: (record: Chapter) => {
+                    const job = audioJobs.get(record.id)
+                    const isGenerating = job && (job.state === 'active' || job.state === 'waiting')
+
+                    return (
+                      <Button
+                        type="primary"
+                        size="small"
+                        icon={<SoundOutlined />}
+                        onClick={() => handleGenerateAudio(record.id)}
+                        loading={generatingChapterId === record.id || isGenerating}
+                        disabled={!!generatingChapterId && generatingChapterId !== record.id}
+                      >
+                        {isGenerating
+                          ? `生成中 ${job?.progress?.percentage ? `${Math.round(job.progress.percentage)}%` : ''}`
+                          : record.status === 'COMPLETED'
+                            ? '重新生成'
+                            : '生成音频'}
+                      </Button>
+                    )
+                  },
                 },
               ]}
             />

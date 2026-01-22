@@ -93,6 +93,42 @@ pnpm build:frontend
 pnpm build:backend
 \`\`\`
 
+### TTS 配置
+
+SmartVoice 支持两种 TTS 方案：
+
+#### 方案一：Coqui TTS (本地部署，推荐)
+
+**优势**：完全免费、数据隐私、可定制
+
+\`\`\`bash
+# 使用 Docker 启动 Coqui TTS 服务
+docker-compose -f docker-compose.coqui.yml up -d
+
+# 验证服务是否启动
+curl http://localhost:5002/
+\`\`\`
+
+详细配置指南：[Coqui TTS 部署文档](docs/deployment/coqui-tts-setup.md)
+
+#### 方案二：讯飞语音合成 (云端服务)
+
+**优势**：高质量、快速、即开即用
+
+在 \`packages/backend/.env\` 中配置讯飞凭证：
+
+\`\`\`env
+XFYUN_TTS_APP_ID=你的应用ID
+XFYUN_TTS_API_KEY=你的API Key
+XFYUN_TTS_API_SECRET=你的API Secret
+\`\`\`
+
+**默认使用 Coqui TTS**，如需切换到讯飞，修改 \`packages/backend/src/services/tts/tts.service.ts\`：
+
+\`\`\`typescript
+private defaultProvider: TTSProvider = TTSProvider.XFYUN
+\`\`\`
+
 ## 项目结构
 
 \`\`\`
@@ -140,6 +176,7 @@ chore: 构建/工具链
 - [系统架构设计](docs/02-technical-design/SmartVoice/system-architecture.md)
 - [API 设计](docs/02-technical-design/SmartVoice/api-design.md)
 - [实施路线图](docs/02-technical-design/SmartVoice/implementation-roadmap.md)
+- [Coqui TTS 部署指南](docs/deployment/coqui-tts-setup.md)
 
 ## 项目状态
 

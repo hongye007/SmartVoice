@@ -100,11 +100,34 @@ export class AudioGenerationService {
         },
       })
 
-      // 8. 更新项目状态
-      await prisma.project.update({
-        where: { id: chapter.projectId },
+      // 8. 更新章节状态为已完成
+      await prisma.chapter.update({
+        where: { id: chapterId },
         data: { status: 'COMPLETED' },
       })
+
+      // 9. 检查项目所有章节是否都已完成
+      const allChapters = await prisma.chapter.findMany({
+        where: { projectId: chapter.projectId },
+        select: { status: true },
+      })
+
+      const allCompleted = allChapters.every(ch => ch.status === 'COMPLETED')
+
+      // 10. 只有所有章节都完成时，才更新项目状态为 COMPLETED
+      if (allCompleted) {
+        await prisma.project.update({
+          where: { id: chapter.projectId },
+          data: { status: 'COMPLETED' },
+        })
+        logger.info(`All chapters completed, project ${chapter.projectId} marked as COMPLETED`)
+      } else {
+        // 至少有一个章节在生成，保持 GENERATING 状态
+        await prisma.project.update({
+          where: { id: chapter.projectId },
+          data: { status: 'GENERATING' },
+        })
+      }
 
       logger.info(`Audio generation completed for chapter ${chapterId}`)
 

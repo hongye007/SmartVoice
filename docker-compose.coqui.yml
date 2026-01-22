@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # Coqui TTS 服务（本地语音合成）
+  coqui-tts:
+    image: ghcr.io/coqui-ai/tts:latest
+    container_name: smartvoice-coqui-tts
+    ports:
+      - "5002:5002"
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        tts-server --model_name tts_models/zh-CN/baker/tacotron2-DDC-GST --port 5002 --use_cuda false
+    volumes:
+      # 持久化模型文件，避免重复下载
+      - coqui-models:/root/.local/share/tts
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5002/ --max-time 5 || exit 1"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+
+    # 如果有 NVIDIA GPU，取消下面的注释以启用 GPU 加速
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  coqui-models:
+    driver: local

@@ -1,6 +1,7 @@
 import type { TTSAdapter, TTSRequest, TTSResponse, Voice } from '../../types/tts.js'
 import { TTSProvider } from '../../types/tts.js'
 import { xfyunTTSAdapter } from './xfyun-tts.adapter.js'
+import { coquiTTSAdapter } from './coqui-tts.adapter.js'
 import { logger } from '../../utils/logger.js'
 
 /**
@@ -9,13 +10,14 @@ import { logger } from '../../utils/logger.js'
  */
 export class TTSService {
   private adapters: Map<TTSProvider, TTSAdapter>
-  private defaultProvider: TTSProvider = TTSProvider.XFYUN
+  private defaultProvider: TTSProvider = TTSProvider.COQUI
 
   constructor() {
     this.adapters = new Map()
 
     // 注册 TTS 提供商
-    this.adapters.set(TTSProvider.XFYUN, xfyunTTSAdapter)
+    this.adapters.set(TTSProvider.COQUI, coquiTTSAdapter) // 本地部署 Coqui TTS（默认）
+    this.adapters.set(TTSProvider.XFYUN, xfyunTTSAdapter) // 讯飞语音合成（云端备选）
     // 后续可以添加更多提供商
     // this.adapters.set(TTSProvider.BAIDU, baiduTTSAdapter)
   }
