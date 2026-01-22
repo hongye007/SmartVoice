@@ -1,0 +1,67 @@
+# tech-design 技能文件结构
+
+本目录包含技术架构设计技能的所有资源。
+
+## 📁 目录结构
+
+```
+tech-design/
+├── SKILL.md                    # 技能定义(核心文件)
+├── templates/                  # 文档模板
+│   ├── tech-stack.md           # 技术栈选型模板
+│   ├── third-party-eval.md     # 第三方服务评估模板
+│   ├── system-architecture.md  # 系统架构设计模板
+│   ├── api-design.md           # API 设计模板
+│   ├── database-design.md      # 数据库设计模板
+│   └── tech-roadmap.md         # 技术路线图模板
+├── references/                 # 参考文档
+│   ├── tech-selection-framework.md  # 技术选型方法论
+│   ├── architecture-patterns.md     # 架构模式参考
+│   └── cost-estimation.md           # 成本估算方法
+└── scripts/                    # 脚本(预留)
+```
+
+## 🎯 使用方式
+
+### 方式 1: 直接调用技能
+
+```
+/tech-design
+```
+
+系统会自动引导你完成技术设计的 5 个模块。
+
+### 方式 2: 明确输入产品规划
+
+```
+基于 docs/product/SmartVoice/ 目录下的产品规划文档,生成技术架构设计
+```
+
+## 📦 输入要求
+
+技能需要以下产品规划文档作为输入:
+- 产品简介/PRD
+- 功能规格说明
+- 用户画像(可选)
+- 市场分析(可选)
+
+## 📄 输出文档
+
+技能会生成以下技术设计文档:
+1. 技术栈选型文档
+2. 第三方服务评估文档
+3. 系统架构设计文档
+4. API 设计文档
+5. 数据库设计文档
+6. 技术实施路线图
+
+所有文档会保存到项目的 docs/tech/ 目录。
+
+## 🔧 自定义
+
+如需调整模板或参考文档,可以直接编辑 templates/ 和 references/ 目录下的文件。
+
+---
+
+**创建日期:** 2026-01-21
+**版本:** 1.0
